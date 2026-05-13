@@ -94,8 +94,10 @@ def compute_global_fid(real_dir, gen_dir, arch_name):
     
     print(f'   Computing FID with InceptionV3...')
     sys.stdout.flush()
+    import torch
+    fid_device = 'cuda' if torch.cuda.is_available() else 'cpu'
     score = cleanfid.compute_fid(flat_real, flat_gen, mode='clean',
-                                num_workers=0, batch_size=32, verbose=True, device='cpu')
+                                num_workers=0, batch_size=32, verbose=True, device=fid_device)
     print(f'Global FID {arch_name}: {score:.2f}')
     sys.stdout.flush()
     return score
@@ -115,9 +117,11 @@ def compute_intraclass_fid(real_dir, gen_dir, arch_name, selected_classes):
         if n_real < 50 or n_gen < 50:
             continue
         try:
+            import torch
+            fid_device = 'cuda' if torch.cuda.is_available() else 'cpu'
             score = cleanfid.compute_fid(r, g, mode='clean',
                                         num_workers=0, batch_size=32, verbose=True,
-                                        device='cpu')
+                                        device=fid_device)
             per_class_fid[cls_name] = score
         except Exception as e:
             print(f'   Warning {cls_name}: {e}')
@@ -127,9 +131,11 @@ def compute_intraclass_fid(real_dir, gen_dir, arch_name, selected_classes):
 
 
 def get_inception_features(img_dir, device, batch_size=64, max_imgs=2000):
-    """Extrait les features InceptionV3 pour un dossier d'images."""
+    """Extract InceptionV3 features from image folder."""
     import torch
-    device = torch.device('cpu')  # Forcer CPU
+    # Use GPU if available, otherwise fallback to CPU
+    if isinstance(device, str):
+        device = torch.device(device)
     inception = tv_models.inception_v3(pretrained=True, transform_input=False)
     inception.fc = nn.Identity()
     inception.eval().to(device)
