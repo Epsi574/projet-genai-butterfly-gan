@@ -46,6 +46,7 @@ results/
 *.png
 *.jpg
 *.jpeg
+*.log
 
 # IDEs
 .vscode/
